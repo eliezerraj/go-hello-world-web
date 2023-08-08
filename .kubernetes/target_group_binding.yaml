@@ -1,0 +1,10 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: go-hello-world-web-tg
+  namespace: test-a
+spec:
+  serviceRef:
+    name: svc-go-hello-world-web
+    port: 3000
+  targetGroupARN: arn:aws:elasticloadbalancing:us-east-2:908671954593:targetgroup/go-hello-world-web-tg/7dcc83bcf2d3cf36
