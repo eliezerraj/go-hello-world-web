@@ -12,21 +12,24 @@ import (
 )
 
 var my_secret_loaded_from_volume Secret
-var my_info_pod					InfoPod		
-
+var my_info_pod	InfoPod
+var PORT = 3000
+var API_VERSION = "0.0"
+	
 type Secret struct {
 	Username		string	`json:username`
 	Password		string	`json:"password"`
 }
 
 type InfoPod struct {
+	API_VERSION			string `json:"version"`
 	OSPID				string `json:"os_pid"`
 	IpAdress			string `json:"ip_address"`
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> index")
-	fmt.Fprintf(w, "<h1>Hello World Go Web</h1>")
+	fmt.Fprintf(w, "<h1>Hello World Go Web 2.0</h1>")
 }
 
 func check(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +61,11 @@ func setInfoPod(){
 		}
 	}
 	my_info_pod.OSPID = strconv.Itoa(os.Getpid())
+
+	if os.Getenv("API_VERSION") !=  "" {
+		API_VERSION = os.Getenv("API_VERSION")
+	}
+	my_info_pod.API_VERSION = API_VERSION
 }
 
 func init() {
@@ -74,6 +82,11 @@ func init() {
 	my_secret_loaded_from_volume.Username = string(file_user)
 	my_secret_loaded_from_volume.Password = string(file_pass)
 
+	if os.Getenv("PORT") !=  "" {
+		intVar, _ := strconv.Atoi(os.Getenv("PORT"))
+		PORT = intVar
+	}
+
 	setInfoPod()
 }
 
@@ -83,9 +96,9 @@ func main() {
 	http.HandleFunc("/live", live)
 	http.HandleFunc("/info", infoPod)
 
-	fmt.Println("Server starting...")
+	fmt.Println("Server starting...", PORT)
 	fmt.Println("my_secret_loaded_from_volume : ", my_secret_loaded_from_volume)
 	fmt.Println("my_info_pod : ", my_info_pod)
-	
-	http.ListenAndServe(":3000", nil)
+
+	http.ListenAndServe(fmt.Sprintf("%s%d", ":", PORT), nil)
 }

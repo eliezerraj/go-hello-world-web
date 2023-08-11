@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ing-go-hello-world-web-b
+  namespace: test-a
+  annotations:
+    #nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    #nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/permanent-redirect-code: "308"
+    nginx.ingress.kubernetes.io/default-backend: "svc-go-hello-world-web-b"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: eks.architecture.caradhras.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-go-hello-world-web-b
+                port:
+                  number: 4000

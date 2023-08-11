@@ -13,7 +13,7 @@ FROM alpine
 
 WORKDIR /app
 COPY --from=builder /app/cmd/go-hello-world-web .
-COPY --from=builder /app/init.sh .
+#COPY --from=builder /app/init.sh .
 
 CMD ["/app/go-hello-world-web"]
 #CMD ["/app/init.sh"]

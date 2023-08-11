@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: &app-name go-hello-world-web-b-cm
+  namespace: test-a
+  labels:
+    app: *app-name
+data:
+  PORT: "4000"
+  API_VERSION: "version b"

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: *app-name
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
   selector:
@@ -27,9 +27,10 @@ spec:
         fsGroup: 3000
       containers:
       - name: *app-name
-        imagePullPolicy: Never
-        image: go-hello-world-web:latest
+        image: 908671954593.dkr.ecr.us-east-2.amazonaws.com/go-hello-world-web
         envFrom:
+        - configMapRef:
+            name: go-hello-world-web-cm
         - secretRef:
             name: super-secret
         volumeMounts:
@@ -70,3 +71,12 @@ spec:
             successThreshold: 1
             timeoutSeconds: 10
       terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchLabels:
+                    app: *app-name
+              weight: 100

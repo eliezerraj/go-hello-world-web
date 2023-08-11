@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: &app-name go-hello-world-web
+  name: &app-name go-hello-world-web-c
   namespace: test-a
   labels:
     app: *app-name
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
   selector:
@@ -20,7 +20,7 @@ spec:
       volumes:
       - name: volume-secret
         secret:
-          secretName: super-secret
+          secretName: super-secret-c
       securityContext:
         runAsUser: 1000
         runAsGroup: 2000
@@ -29,6 +29,8 @@ spec:
       - name: *app-name
         image: 908671954593.dkr.ecr.us-east-2.amazonaws.com/go-hello-world-web
         envFrom:
+        - configMapRef:
+            name: go-hello-world-web-c-cm
         - secretRef:
             name: super-secret
         volumeMounts:
@@ -37,16 +39,16 @@ spec:
             readOnly: true
         resources:
            requests:
-             cpu: 100m
+             cpu: 50m
              memory: 50Mi
            limits:
-             cpu: 200m
+             cpu: 100m
              memory: 100Mi
         securityContext:
           allowPrivilegeEscalation: false
         ports:
         - name: http
-          containerPort: 3000
+          containerPort: 5000
           protocol: TCP
         readinessProbe:
             httpGet:
@@ -69,3 +71,12 @@ spec:
             successThreshold: 1
             timeoutSeconds: 10
       terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchLabels:
+                    app: *app-name
+              weight: 100
