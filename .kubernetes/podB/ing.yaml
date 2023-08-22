@@ -15,10 +15,17 @@ spec:
     - host: eks.architecture.caradhras.io
       http:
         paths:
-          - path: /
+          - path: /pod-b
             pathType: Prefix
             backend:
               service:
                 name: svc-go-hello-world-web-b
                 port:
                   number: 4000
+          - path: /pod-b2
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-go-hello-world-web-b2
+                port:
+                  number: 4500

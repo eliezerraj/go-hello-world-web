@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: &app-name go-hello-world-web-b-cm
+  name: &app-name go-hello-world-web-b2-cm
   namespace: test-a
   labels:
     app: *app-name
 data:
-  PORT: "4000"
-  POD_NAME: "pod b"
+  PORT: "4500"
+  POD_NAME: "pod b2"
   API_VERSION: "version 1"
-  POD_PATH: "/pod-b"
+  POD_PATH: "/pod-b2"

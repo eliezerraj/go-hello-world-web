@@ -14,7 +14,9 @@ import (
 var my_secret_loaded_from_volume Secret
 var my_info_pod	InfoPod
 var PORT = 3000
-var API_VERSION = "0.0"
+var API_VERSION = "no-version"
+var POD_NAME = "pod no-name"
+var POD_PATH = "/pod-b"
 	
 type Secret struct {
 	Username		string	`json:username`
@@ -22,28 +24,39 @@ type Secret struct {
 }
 
 type InfoPod struct {
+	POD_NAME			string `json:"pod_name"`
 	API_VERSION			string `json:"version"`
 	OSPID				string `json:"os_pid"`
 	IpAdress			string `json:"ip_address"`
 }
 
+func methodA(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("==> methodA => " + r.Method + " => path:  " + r.URL.Path)
+	fmt.Fprintf(w, "<h1>methodA : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+}
+
+func methodB(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("==> methodB => " + r.Method + " => path:  " + r.URL.Path)
+	fmt.Fprintf(w, "<h1>methodB : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("==> index")
-	fmt.Fprintf(w, "<h1>Hello World Go Web 2.0</h1>")
+	fmt.Println("==> index => " + r.Method + " => path:  " + r.URL.Path)
+	fmt.Fprintf(w, "<h1>Hello World Go Web : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
 }
 
 func check(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("==> check")
-	fmt.Fprintf(w, "<h1>Health check</h1>")
+	fmt.Println("==> check => " + r.Method + " => path:  " + r.URL.Path)
+	fmt.Fprintf(w, "<h1>Health check : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
 }
 
 func live(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("==> live")
-	fmt.Fprintf(w, "<h1>Live check</h1>")
+	fmt.Println("==> live => " + r.Method + " => path:  " + r.URL.Path)
+	fmt.Fprintf(w, "<h1>Live check: " + POD_NAME + " ver: " + API_VERSION + " </h1>")
 }
 
 func infoPod(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("==> infoPod")
+	fmt.Println("==> infoPod => " + r.Method + " => path:  " + r.URL.Path)
 	json.NewEncoder(w).Encode(my_info_pod)
 }
 
@@ -66,6 +79,15 @@ func setInfoPod(){
 		API_VERSION = os.Getenv("API_VERSION")
 	}
 	my_info_pod.API_VERSION = API_VERSION
+
+	if os.Getenv("POD_NAME") !=  "" {
+		POD_NAME = os.Getenv("POD_NAME")
+	}
+	my_info_pod.POD_NAME = POD_NAME
+
+	if os.Getenv("POD_PATH") !=  "" {
+		POD_PATH = os.Getenv("POD_PATH")
+	}
 }
 
 func init() {
@@ -91,10 +113,13 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/", index)
+
+	http.HandleFunc(POD_PATH + "/", index)
 	http.HandleFunc("/health", check)
 	http.HandleFunc("/live", live)
-	http.HandleFunc("/info", infoPod)
+	http.HandleFunc(POD_PATH + "/info", infoPod)
+	http.HandleFunc(POD_PATH + "/a", methodA)
+	http.HandleFunc(POD_PATH + "/b", methodB)
 
 	fmt.Println("Server starting...", PORT)
 	fmt.Println("my_secret_loaded_from_volume : ", my_secret_loaded_from_volume)

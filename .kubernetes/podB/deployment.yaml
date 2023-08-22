@@ -66,7 +66,7 @@ spec:
               - -c
               - "ps -A | grep go-hello-world-web | grep -v grep"
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 15
             failureThreshold: 3
             successThreshold: 1
             timeoutSeconds: 10

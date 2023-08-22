@@ -27,20 +27,19 @@ spec:
         fsGroup: 3000
       containers:
       - name: *app-name
-        imagePullPolicy: Never
-        image: go-hello-world-web:latest
+        image: 908671954593.dkr.ecr.us-east-2.amazonaws.com/go-hello-world-web
         envFrom:
+        - configMapRef:
+            name: go-hello-world-web-b2-cm
         - secretRef:
             name: super-secret
-        - configMapRef:
-            name: go-hello-world-web-b-cm
         volumeMounts:
           - mountPath: "/var/go-hello-world-web/secret"
             name: volume-secret
             readOnly: true
         resources:
            requests:
-             cpu: 100m
+             cpu: 50m
              memory: 50Mi
            limits:
              cpu: 200m
@@ -49,7 +48,7 @@ spec:
           allowPrivilegeEscalation: false
         ports:
         - name: http
-          containerPort: 4000
+          containerPort: 4500
           protocol: TCP
         readinessProbe:
             httpGet:
@@ -67,7 +66,7 @@ spec:
               - -c
               - "ps -A | grep go-hello-world-web | grep -v grep"
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 15
             failureThreshold: 3
             successThreshold: 1
             timeoutSeconds: 10

@@ -7,4 +7,6 @@ metadata:
     app: *app-name
 data:
   PORT: "5000"
-  API_VERSION: "version c"
+  POD_NAME: "pod c"
+  API_VERSION: "version 1"
+  POD_PATH: ""

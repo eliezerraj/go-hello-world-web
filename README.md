@@ -9,3 +9,6 @@ POC just for tests using liveness/readiness probes and Dockerfile using CMD vs S
       GOOD=linux GOARCH=amd64 go build -o ../build/main main.go
 
       zip -jrm ../build/main.zip ../build/main
+
+https://localhost:PORT/pod-b/a
+https://localhost:PORT/pod-b/info
