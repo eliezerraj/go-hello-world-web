@@ -9,6 +9,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"context"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gorilla/mux"
+
 )
 
 var my_secret_loaded_from_volume Secret
@@ -16,7 +23,7 @@ var my_info_pod	InfoPod
 var PORT = 3000
 var API_VERSION = "no-version"
 var POD_NAME = "pod no-name"
-var POD_PATH = "/pod-b"
+var POD_PATH = ""
 	
 type Secret struct {
 	Username		string	`json:username`
@@ -33,31 +40,59 @@ type InfoPod struct {
 func methodA(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> methodA => " + r.Method + " => path:  " + r.URL.Path)
 	fmt.Fprintf(w, "<h1>methodA : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+	return
 }
 
 func methodB(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> methodB => " + r.Method + " => path:  " + r.URL.Path)
 	fmt.Fprintf(w, "<h1>methodB : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+	return
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> index => " + r.Method + " => path:  " + r.URL.Path)
 	fmt.Fprintf(w, "<h1>Hello World Go Web : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+	return
 }
 
 func check(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> check => " + r.Method + " => path:  " + r.URL.Path)
 	fmt.Fprintf(w, "<h1>Health check : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+	return
 }
 
 func live(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> live => " + r.Method + " => path:  " + r.URL.Path)
 	fmt.Fprintf(w, "<h1>Live check: " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+	return
 }
 
 func infoPod(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> infoPod => " + r.Method + " => path:  " + r.URL.Path)
 	json.NewEncoder(w).Encode(my_info_pod)
+	return
+}
+
+func sum(w http.ResponseWriter, r *http.Request){
+	fmt.Println("==> sum => " + r.Method + " => path:  " + r.URL.Path)
+	
+	vars := mux.Vars(r)
+	intVar, err := strconv.Atoi(vars["data"])
+	if err != nil{
+		log.Printf("ERRO => %v", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode("erro.ErrConvertion")
+		return
+	}
+	intVar++
+	json.NewEncoder(w).Encode(intVar)
+	return
+}
+
+func version(w http.ResponseWriter, r *http.Request){
+	fmt.Println("==> version => " + r.Method + " => path:  " + r.URL.Path)
+	json.NewEncoder(w).Encode(API_VERSION)
+	return
 }
 
 func setInfoPod(){
@@ -113,17 +148,51 @@ func init() {
 }
 
 func main() {
+	log.Printf("Starting !")
 
-	http.HandleFunc(POD_PATH + "/", index)
-	http.HandleFunc("/health", check)
-	http.HandleFunc("/live", live)
-	http.HandleFunc(POD_PATH + "/info", infoPod)
-	http.HandleFunc(POD_PATH + "/a", methodA)
-	http.HandleFunc(POD_PATH + "/b", methodB)
+	myRouter := mux.NewRouter().StrictSlash(true)
+
+	myRouter.HandleFunc(POD_PATH +"/index", index )
+	myRouter.HandleFunc(POD_PATH +"/", index )
+	myRouter.HandleFunc(POD_PATH +"/version", version )
+	myRouter.HandleFunc(POD_PATH +"/info", infoPod )
+	myRouter.HandleFunc("/health", check)
+	myRouter.HandleFunc("/live", live)
+	myRouter.HandleFunc(POD_PATH + "/a", methodA)
+	myRouter.HandleFunc(POD_PATH + "/b", methodB)
+	myRouter.HandleFunc(POD_PATH + "/sum/{data}", sum)
 
 	fmt.Println("Server starting...", PORT)
 	fmt.Println("my_secret_loaded_from_volume : ", my_secret_loaded_from_volume)
 	fmt.Println("my_info_pod : ", my_info_pod)
 
-	http.ListenAndServe(fmt.Sprintf("%s%d", ":", PORT), nil)
+	http_srv := http.Server{
+		Addr:		":" +  strconv.Itoa(PORT),      	
+		Handler:      myRouter,                	          
+		ReadTimeout:  time.Duration(5) * time.Second,   
+		WriteTimeout: time.Duration(5) * time.Second,  
+		IdleTimeout:  time.Duration(5) * time.Second, 
+	}
+
+	go func() {
+		err := http_srv.ListenAndServe()
+		if err != nil {
+			log.Print("message ==> ", err)
+		}
+	}()
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	<-ch
+
+	log.Printf("Stopping Server")
+	ctx , cancel := context.WithTimeout(context.Background(), time.Duration(5) * time.Second)
+	defer cancel()
+
+	if err := http_srv.Shutdown(ctx); err != nil && err != http.ErrServerClosed {
+		log.Print("WARNING Dirty Shutdown", err)
+		return
+	}
+
+	log.Printf("Stop Done !")
 }

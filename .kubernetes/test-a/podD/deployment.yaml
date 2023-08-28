@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: &app-name go-hello-world-web
+  name: &app-name go-hw-d
   namespace: test-a
   labels:
     app: *app-name
@@ -30,7 +30,7 @@ spec:
         image: 908671954593.dkr.ecr.us-east-2.amazonaws.com/go-hello-world-web
         envFrom:
         - configMapRef:
-            name: go-hello-world-web-cm
+            name: go-hw-d-cm
         - secretRef:
             name: super-secret
         volumeMounts:

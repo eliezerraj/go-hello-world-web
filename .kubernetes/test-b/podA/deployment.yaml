@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: &app-name go-hello-world-web-b
-  namespace: test-a
+  name: &app-name go-hw-a
+  namespace: test-b
   labels:
     app: *app-name
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
   selector:
@@ -20,7 +20,7 @@ spec:
       volumes:
       - name: volume-secret
         secret:
-          secretName: super-secret-b
+          secretName: super-secret-a
       securityContext:
         runAsUser: 1000
         runAsGroup: 2000
@@ -30,22 +30,27 @@ spec:
         image: 908671954593.dkr.ecr.us-east-2.amazonaws.com/go-hello-world-web
         envFrom:
         - configMapRef:
-            name: go-hello-world-web-b-cm
-        - secretRef:
-            name: super-secret
+            name: go-hw-a-cm
         volumeMounts:
           - mountPath: "/var/go-hello-world-web/secret"
             name: volume-secret
             readOnly: true
         resources:
            requests:
-             cpu: 50m
+             cpu: 100m
              memory: 50Mi
            limits:
              cpu: 200m
              memory: 100Mi
         securityContext:
+          seccompProfile:
+            type: RuntimeDefault
+          runAsNonRoot: true
+          runAsUser: 1100
           allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         ports:
         - name: http
           containerPort: 4000
@@ -66,7 +71,7 @@ spec:
               - -c
               - "ps -A | grep go-hello-world-web | grep -v grep"
             initialDelaySeconds: 5
-            periodSeconds: 15
+            periodSeconds: 5
             failureThreshold: 3
             successThreshold: 1
             timeoutSeconds: 10

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: &app-name go-hw-c-cm
+  namespace: test-b
+  labels:
+    app: *app-name
+data:
+  PORT: "4200"
+  POD_NAME: "pod c (ns test-b)"
+  API_VERSION: "version 1"
+  POD_PATH: "/pod-c"

@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ing-auth-go-hw-c
+  namespace: test-b
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/permanent-redirect-code: "308"
+    nginx.ingress.kubernetes.io/default-backend: "svc-go-hw-c"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: svc-c.architecture.caradhras.io
+      http:
+        paths:
+          - path: /pod-c
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-go-hw-c
+                port:
+                  number: 4200
