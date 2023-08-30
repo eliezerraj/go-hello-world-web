@@ -49,8 +49,18 @@ func methodB(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func header(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("==> header => " + r.Method + " => path:  " + r.URL.Path)
+	//Iterate over all header fields
+	for k, v := range r.Header {
+		fmt.Fprintf(w, "Header field %q, Value %q\n", k, v)
+	}
+	return
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("==> index => " + r.Method + " => path:  " + r.URL.Path)
+
 	fmt.Fprintf(w, "<h1>Hello World Go Web : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
 	return
 }
@@ -154,6 +164,7 @@ func main() {
 
 	myRouter.HandleFunc(POD_PATH +"/index", index )
 	myRouter.HandleFunc(POD_PATH +"/", index )
+	myRouter.HandleFunc(POD_PATH +"/header", header )
 	myRouter.HandleFunc(POD_PATH +"/version", version )
 	myRouter.HandleFunc(POD_PATH +"/info", infoPod )
 	myRouter.HandleFunc("/health", check)
