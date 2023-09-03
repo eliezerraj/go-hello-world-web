@@ -26,7 +26,7 @@ phases:
       - kubectl get deployments -n test-b
       
       - echo apply deployment...
-      - kubectl apply -f .kubernetes/test-b/podC/deployment_aws.yaml
+      - kubectl apply -f .kubernetes/test-b/podC/deployment.yaml
       
       - echo restart deployment done...   
       - kubectl rollout restart deployment/go-rest-api -n test-b
