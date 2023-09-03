@@ -13,18 +13,26 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"strings"
+
+	"github.com/go-hello-world-web/internal/domain"
+	"github.com/go-hello-world-web/internal/erro"
 
 	"github.com/gorilla/mux"
+	"github.com/golang-jwt/jwt/v4"
 
 )
 
-var my_secret_loaded_from_volume Secret
-var my_info_pod	InfoPod
-var PORT = 3000
-var API_VERSION = "no-version"
-var POD_NAME = "pod no-name"
-var POD_PATH = ""
-	
+var (
+	my_secret_loaded_from_volume Secret
+	my_info_pod	InfoPod
+	PORT = 3000
+	API_VERSION = "no-version"
+	POD_NAME = "pod no-name"
+	POD_PATH = ""
+	jwtKey = []byte("my_secret_key")
+)
+
 type Secret struct {
 	Username		string	`json:username`
 	Password		string	`json:"password"`
@@ -35,6 +43,12 @@ type InfoPod struct {
 	API_VERSION			string `json:"version"`
 	OSPID				string `json:"os_pid"`
 	IpAdress			string `json:"ip_address"`
+}
+
+func MethodToken(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("==> methodToken => " + r.Method + " => path:  " + r.URL.Path)
+	fmt.Fprintf(w, "<h1>method com JWT Token  : " + POD_NAME + " ver: " + API_VERSION + " </h1>")
+	return
 }
 
 func methodA(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +120,7 @@ func version(w http.ResponseWriter, r *http.Request){
 }
 
 func setInfoPod(){
+	fmt.Println("==> setInfoPod")
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		log.Printf("Error to get the POD IP address !!!", err)
@@ -135,6 +150,58 @@ func setInfoPod(){
 	}
 }
 
+func MiddleWareHandlerToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("-------------------------------------------- \n")
+		log.Println("MiddleWareHandlerToken (INICIO)")
+
+		token := r.Header.Get("Authorization")
+		tokenSlice := strings.Split(token, " ")
+		var bearerToken string
+
+		if len(tokenSlice) < 2 {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(erro.ErrStatusUnauthorized.Error())
+			return
+		}
+		
+		bearerToken = tokenSlice[len(tokenSlice)-1]
+		res, err := ScopeValidation(bearerToken,"","")
+		if err != nil || res != true {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(err.Error())
+			return
+		}
+
+		log.Println("MiddleWareHandlerToken (FIM)")
+		log.Printf("-------------------------------------------- \n")
+		
+		next.ServeHTTP(w, r)
+	})
+}
+
+func ScopeValidation(token string, path string, method string) (bool, error){
+	fmt.Println("==> ScopeValidation :" , token )
+
+	claims := &domain.JwtData{}
+	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			return false, erro.ErrStatusUnauthorized
+		}
+		return false, erro.ErrTokenExpired
+	}
+
+	if !tkn.Valid {
+		return false, erro.ErrStatusUnauthorized
+	}
+
+	return true, nil
+}
+
 func init() {
 	file_user, err := ioutil.ReadFile("/var/go-hello-world-web/secret/username")
     if err != nil {
@@ -154,6 +221,10 @@ func init() {
 		PORT = intVar
 	}
 
+	if os.Getenv("JWTKEY") !=  "" {
+		jwtKey = []byte(os.Getenv("JWTKEY"))
+	}
+
 	setInfoPod()
 }
 
@@ -162,9 +233,14 @@ func main() {
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 
-	myRouter.HandleFunc(POD_PATH +"/index", index )
-	myRouter.HandleFunc(POD_PATH +"/", index )
-	myRouter.HandleFunc(POD_PATH +"/header", header )
+	myRouter.HandleFunc(POD_PATH +"/index", index)
+	myRouter.HandleFunc(POD_PATH +"/", index)
+	
+	methodToken := myRouter.Methods(http.MethodGet, http.MethodOptions).Subrouter()
+	methodToken.HandleFunc(POD_PATH +"/methodToken", MethodToken)
+	methodToken.Use(MiddleWareHandlerToken)
+
+	myRouter.HandleFunc(POD_PATH +"/header", header)
 	myRouter.HandleFunc(POD_PATH +"/version", version )
 	myRouter.HandleFunc(POD_PATH +"/info", infoPod )
 	myRouter.HandleFunc("/health", check)
@@ -174,8 +250,6 @@ func main() {
 	myRouter.HandleFunc(POD_PATH + "/sum/{data}", sum)
 
 	fmt.Println("Server starting...", PORT)
-	fmt.Println("my_secret_loaded_from_volume : ", my_secret_loaded_from_volume)
-	fmt.Println("my_info_pod : ", my_info_pod)
 
 	http_srv := http.Server{
 		Addr:		":" +  strconv.Itoa(PORT),      	

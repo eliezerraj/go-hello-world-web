@@ -1,8 +1,14 @@
 # go-hello-world-web
 
-POC just for tests using liveness/readiness probes and Dockerfile using CMD vs Shell (SIGTERM)
+Workload just for tests:
 
-## Compile lambda
+liveness/readiness probes
+
+Dockerfile using CMD vs Shell (SIGTERM)
+
+Autentication/Authorization (JWT Oauth 2.0 + Scopes)
+
+## Compile
 
    Manually compile the function
 
@@ -10,5 +16,20 @@ POC just for tests using liveness/readiness probes and Dockerfile using CMD vs S
 
       zip -jrm ../build/main.zip ../build/main
 
-https://localhost:PORT/pod-b/a
-https://localhost:PORT/pod-b/info
+## Endpoints
+
+GET
+
+      http://localhost:PORT/pod-b/a
+      http://localhost:PORT/pod-b/b
+      http://localhost:PORT/pod-b/info
+      http://localhost:PORT/pod-b/version
+      http://localhost:PORT/pod-b/header
+
+POST
+
+      http://localhost:PORT/pod-b/sum/2
+
+GET (authenticatio/authorization - JWT)
+      
+      http://localhost:PORT/pod-b/methodToken
