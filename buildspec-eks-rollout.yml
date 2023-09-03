@@ -1,0 +1,39 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo "Install Phase - Nothing to do using latest Amazon Linux Docker Image for CodeBuild which has all AWS Tools"
+  pre_build:
+      commands:
+  build:
+    commands:
+  post_build:
+    commands:
+      - echo Get Credentials...
+      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      
+      - echo Logging in to Amazon EKS...
+      - echo $EKS_CLUSTER_NAME $AWS_DEFAULT_REGION
+      - aws eks update-kubeconfig  --name $EKS_CLUSTER_NAME --region $AWS_DEFAULT_REGION
+      - kubectl version
+      - kubectl config view --minify
+      
+      - echo check deployment...
+      - kubectl get deployments -n test-b
+      
+      - echo apply deployment...
+      - kubectl apply -f .kubernetes/test-b/podC/deployment_aws.yaml
+      
+      - echo restart deployment done...   
+      - kubectl rollout restart deployment/go-rest-api -n test-b
+      
+      - printf '[{"name":"eks-deployment","regiom":"%s"}]' $EKS_CLUSTER_NAME:$AWS_DEFAULT_REGION > build.json
+
+artifacts:
+  files:
+    - build.json
+    - .kubernetes/*
