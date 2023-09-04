@@ -28,8 +28,8 @@ phases:
       - echo apply deployment...
       - kubectl apply -f .kubernetes/test-b/podC/deployment.yaml
       
-      - echo restart deployment done...   
-      - kubectl rollout restart deployment/go-rest-api -n test-b
+      #- echo restart deployment done...   
+      #- kubectl rollout restart deployment/go-rest-api -n test-b
       
       - printf '[{"name":"eks-deployment","regiom":"%s"}]' $EKS_CLUSTER_NAME:$AWS_DEFAULT_REGION > build.json
 
